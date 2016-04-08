@@ -1,0 +1,330 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F0F0FF"
+    tools:context=".MainActivity" >
+
+    <RelativeLayout
+        android:id="@+id/titlebar"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="5dp"
+        android:background="#222222" >
+
+        <ImageButton
+            android:id="@+id/setting_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="30dp"
+            android:background="@drawable/button_bk"
+            android:src="@drawable/icon_navigation_setting" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/content"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/titlebar"
+        android:paddingBottom="@dimen/activity_vertical_margin"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:paddingTop="@dimen/activity_vertical_margin" >
+
+        <RelativeLayout
+            android:id="@+id/above_content_normal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" >
+
+            <ImageButton
+                android:id="@+id/backup"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:layout_marginTop="40dp"
+                android:background="@drawable/button_bk1"
+                android:paddingRight="250dp"
+                android:src="@drawable/new_backup_btn_drawable" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="100dp"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="40dp"
+                android:gravity="center"
+                android:orientation="vertical" >
+
+                <TextView
+                    android:id="@+id/backup_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:text="@string/backup"
+                    android:textSize="20sp" />
+
+                <ImageView
+                    android:layout_width="300dp"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:src="@drawable/partingline" />
+
+                <TextView
+                    android:id="@+id/backup_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:text="上次备份时间是：2013.10.10"
+                    android:textSize="10sp" />
+            </LinearLayout>
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/below_content_normal"
+            android:layout_marginTop="80dp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/above_content_normal" >
+
+            <ImageButton
+                android:id="@+id/restore"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"  
+                android:background="@drawable/button_bk1"
+                android:paddingRight="250dp"
+                android:src="@drawable/restore_btn_drawable" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="100dp"
+                android:layout_alignTop="@+id/restore"
+                android:gravity="center"
+                android:orientation="vertical" >
+
+                <TextView
+                    android:id="@+id/restore_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:text="@string/restore"
+                    android:textSize="20sp" />
+
+                <ImageView
+                    android:layout_width="300dp"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:src="@drawable/partingline" />
+
+                <TextView
+                    android:id="@+id/backup_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:text="2个备份 22k"
+                    android:textSize="10sp" />
+            </LinearLayout>
+
+        </RelativeLayout>
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+         <RelativeLayout
+            android:id="@+id/above_content_press"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" 
+            android:visibility="invisible"
+            android:clickable="false"
+            >
+
+            <ImageButton
+                android:id="@+id/backup_local"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="40dp"
+                android:background="@drawable/button_bk1"
+                android:paddingRight="250dp"
+                android:src="@drawable/local" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="40dp"
+                android:gravity="center"
+                android:orientation="vertical" >
+
+                <TextView
+                    android:id="@+id/backup_local_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:text="@string/backup_local"
+                    android:textSize="20sp" />
+
+                <ImageView
+                    android:layout_width="300dp"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:src="@drawable/partingline" />
+
+                <TextView
+                    android:id="@+id/backup_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:text="上次备份时间是：2013.10.10"
+                    android:textSize="10sp" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/backup_cloud"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_below="@id/backup_local"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/button_bk1"
+                android:paddingRight="250dp"
+                android:src="@drawable/cloud" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:layout_below="@id/backup_local"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="5dp"
+                android:gravity="center"
+                android:orientation="vertical" >
+
+                <TextView
+                    android:id="@+id/backup_cloud_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:text="@string/backup_cloud"
+                    android:textSize="20sp" />
+
+                <ImageView
+                    android:layout_width="300dp"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:src="@drawable/partingline" />
+
+                <TextView
+                    android:id="@+id/backup_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:text="上次备份时间是：2013.10.10"
+                    android:textSize="10sp" />
+            </LinearLayout>
+        </RelativeLayout>
+        
+        
+        
+        
+        
+        
+        
+        
+        <RelativeLayout
+            android:id="@+id/below_content_press"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/above_content_press" 
+            android:layout_marginTop="80dp"
+            android:visibility="invisible"
+            android:clickable="false"
+            >
+
+            <ImageButton
+                android:id="@+id/restore_local"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/button_bk1"
+                android:paddingRight="250dp"
+                android:src="@drawable/local" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:layout_centerHorizontal="true"
+                android:gravity="center"
+                android:orientation="vertical" >
+
+                <TextView
+                    android:id="@+id/restore_local_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:text="@string/restore_local"
+                    android:textSize="20sp" />
+
+                <ImageView
+                    android:layout_width="300dp"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:src="@drawable/partingline" />
+
+                <TextView
+                    android:id="@+id/restore_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:text="上次备份时间是：2013.10.10"
+                    android:textSize="10sp" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/restore_cloud"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_below="@id/restore_local"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/button_bk1"
+                android:paddingRight="250dp"
+                android:src="@drawable/cloud" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:layout_below="@id/restore_local"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="5dp"
+                android:gravity="center"
+                android:orientation="vertical" >
+
+                <TextView
+                    android:id="@+id/restore_cloud_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:text="@string/restore_cloud"
+                    android:textSize="20sp" />
+
+                <ImageView
+                    android:layout_width="300dp"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:src="@drawable/partingline" />
+
+                <TextView
+                    android:id="@+id/restore_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:text="上次备份时间是：2013.10.10"
+                    android:textSize="10sp" />
+            </LinearLayout>
+        </RelativeLayout>
+       
+    </RelativeLayout>
+
+</RelativeLayout>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+    <ImageView
+        android:id="@+id/header_iv"
+        android:layout_width="70dp"
+    	android:layout_height="50dp"
+    	android:layout_centerVertical="true"
+    	android:background="@drawable/contacts"
+        />
+
+    <TextView
+        android:id="@+id/name_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/header_iv"
+        android:layout_centerVertical="true"
+        android:text="项目"
+        android:textSize="20sp" />
+
+    <ImageView
+         android:id="@+id/check_iv"
+         android:layout_width="30dp"
+    	 android:layout_height="wrap_content"
+    	 android:src="@drawable/btn_check_off"
+    	 android:layout_alignParentRight="true"
+    	 android:layout_centerVertical="true"
+        />
+    
+</RelativeLayout>

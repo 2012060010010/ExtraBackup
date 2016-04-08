@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+    
+
+    <TextView
+        android:id="@+id/name_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:text="项目"
+        android:textSize="15sp" />
+
+    <ImageView
+        android:id="@+id/select_iv"
+        android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:layout_centerVertical="true"
+    	android:layout_alignParentRight="true"
+    	android:src="@drawable/select_off"
+    	android:background="@null"
+        />
+    
+    
+    <ImageButton
+         android:id="@+id/delete_ib"
+         android:layout_width="wrap_content"
+    	 android:layout_height="wrap_content"
+    	 android:src="@drawable/delete_default"
+    	 android:layout_toLeftOf="@id/select_iv"
+    	 android:layout_marginRight="40dp"
+    	 android:layout_centerVertical="true"
+    	 android:background="@drawable/button_bk"
+        />
+    
+</RelativeLayout>

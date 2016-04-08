@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">ExtraBackup</string>
+    <string name="action_settings">Settings</string>
+    <string name="input_password">邮箱密码</string>
+    <string name="input_mail">邮箱地址</string>
+    <string name="save">保存</string>
+    <string name="text_backup">短信备份</string>
+    <string name="contact_backup">联系人备份</string>
+    <string name="text_recover">短信恢复</string>
+    <string name="contact_recover">联系人恢复</string>
+    <string name="backup_all">备份全部</string>
+    <string name="recover_all">恢复全部</string>
+    <string name="input_host">服务器地址：如sina.com</string>
+    <string name="setting">设置</string>
+    <string name="user">账号</string>
+    <string name="backup">备份</string>
+    <string name="restore">恢复</string>
+    <string name="backup_cloud">备份到云端</string>
+    <string name="backup_local">备份到SD卡</string>
+    <string name="restore_local">从SD卡恢复</string>
+    <string name="restore_cloud">从云端恢复</string>
+    <string name="start_backup">开始备份</string>
+    <string name="start_restore">开始恢复</string>
+    <string name="user_dialog">用户信息</string>
+
+</resources>
