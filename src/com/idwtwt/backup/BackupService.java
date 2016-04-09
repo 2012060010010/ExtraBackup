@@ -135,88 +135,81 @@ public class BackupService extends Service
 		contacts_action = action1;
 		sms_action = action2;
 		net_action = action3;
-		new Thread()
+		Thread contactsms=new Thread() 
 		{
-
 			@Override
 			public void run()
-			{	Intent intent = new Intent();
+			{	
+				Intent intent = new Intent();
 				intent.setAction("com.idwtwt.restore.STATUES_REFRESH");
 				SQLiteDatabase db = createDatabase();
+				db.close();
 				if (contacts_action)
-				{
-					if (backupContactToSD(db))
-					{
+				{   SQLiteDatabase db1 = openDatabase();
+				    boolean contact=backupContactToSD(db1);
+					if (contact)
+					{   System.out.println("1");
+						db1.close();
 						intent.putExtra("type", MESSAGE_TYPE_STATUES_CONTACT_DONE); 
 						sendBroadcast(intent);
 					}
 				}
 				if (sms_action)
-				{
-					if (backupSMStoSD(db))
+				{  SQLiteDatabase db2 = openDatabase();
+				    System.out.println("2");
+				    boolean sms=backupSMStoSD(db2);
+					if (sms)
 					{
-						try
-						{
-							Thread.sleep(100);//睡眠一下，否则短信备份太快，让用户觉得没有备份短信
-						} catch (InterruptedException e)
-						{
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
 						intent.putExtra("type",MESSAGE_TYPE_STATUES_SMS_DONE ); 
 						sendBroadcast(intent);
 					}
+					db2.close();
 				}
-				db.close();
 			}
-			
-			
-		}.start();
+		};System.out.println("3");
+		contactsms.start();
 		
 		
 		if (net_action)
 		{
-			
-			
-			thread = new Thread()
-			{
-
-				@Override
-				public void run()
-				{
-					timer = new Timer();
-					timer.schedule(new TimerTask()
-					{
-						
-						@Override
-						public void run()
-						{
-							handler.sendEmptyMessage(0);
-							
-						}
-					},10000,1000);
-					if (send())
-					{   
-					try
-					{
-						Thread.sleep(100);//睡眠一下
-					} catch (InterruptedException e)
-					{
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-						Intent intent = new Intent();
-						intent.setAction("com.idwtwt.restore.STATUES_REFRESH");
-						intent.putExtra("type",MESSAGE_TYPE_STATUES_NET_DONE ); 
-						sendBroadcast(intent);
-						timer.cancel();
-					}	
-				}	
-			};
-			
-			thread.start();
-			delete(content);
-			delete(content + "-journal");
+//			thread = new Thread()
+//			{
+//
+//				@Override
+//				public void run()
+//				{
+//					timer = new Timer();
+//					timer.schedule(new TimerTask()
+//					{
+//						
+//						@Override
+//						public void run()
+//						{
+//							handler.sendEmptyMessage(0);
+//							
+//						}
+//					},10000,1000);
+//					if (send())
+//					{   
+//					try
+//					{
+//						Thread.sleep(100);//睡眠一下
+//					} catch (InterruptedException e)
+//					{
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
+//						Intent intent = new Intent();
+//						intent.setAction("com.idwtwt.restore.STATUES_REFRESH");
+//						intent.putExtra("type",MESSAGE_TYPE_STATUES_NET_DONE ); 
+//						sendBroadcast(intent);
+//						timer.cancel();
+//					}	
+//				}	
+//			};
+//			thread.start();
+//			delete(content);
+//			delete(content + "-journal");
 		}
 		
 	}
@@ -234,7 +227,7 @@ public class BackupService extends Service
 			Cursor cursor = getContentResolver().query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
 			// 如果记录不为空
 			
-			
+			System.out.println("开始备份联系人");
 	/********************************************开始事务***********************************************************************/
 			db.beginTransaction(); // 开始事务处理
 	
@@ -247,7 +240,7 @@ public class BackupService extends Service
 																					// 联系人ID
 					// 获取联系人名字
 					person_name=cursor.getString(cursor.getColumnIndex(Contacts.DISPLAY_NAME));
-					//System.out.println(person_name);
+					
 					//使用ContentResolver查找联系人号码
 					Cursor phones = getContentResolver().query(CommonDataKinds.Phone.CONTENT_URI,
 							null, CommonDataKinds.Phone.CONTACT_ID + " = " +contacts_id,
@@ -262,15 +255,12 @@ public class BackupService extends Service
 					Cursor emails = getContentResolver().query(CommonDataKinds.Email.CONTENT_URI,
 							null, CommonDataKinds.Email.CONTACT_ID + " = " +contacts_id,
 					null, null);
-					//emails.moveToNext();
 					if(emails.moveToFirst()){
 					e_mail=emails.getString(emails.getColumnIndex(CommonDataKinds.Email.DATA));
 					}else{
 						e_mail=null;
 					}
 					emails.close();
-					
-				     // System.out.println( RawContacts._ID);
 	                   // 将取出的数据插入新建的数据库
 						String insert_sql = "insert into contacts values(null, ?, ?, ?, ?)";
 						Object[] bindArgs = new Object[]
@@ -284,7 +274,7 @@ public class BackupService extends Service
 			db.setTransactionSuccessful(); // 设置事务处理成功，不设置会自动回滚不提交
 		/********************************************结束事务***********************************************************************/
 			db.endTransaction(); //
-
+           System.out.println("联系人备份完成");
 			return true;
 		}
 		
@@ -303,7 +293,7 @@ public class BackupService extends Service
 		};
 		
 		Cursor cursor =getContentResolver().query(SMS_URI, projection, null, null, "date desc");
-		
+		System.out.println("获取短信成功！！！");
 		while (db.isDbLockedByCurrentThread()){  
 	       try {  
 	            Thread.sleep(10);  
@@ -311,10 +301,10 @@ public class BackupService extends Service
 	            e.printStackTrace();  
 	        }  
 	    }  
+		//db.beginTransaction(); // 开始事务处理
 		
 		/*--------------------------------------将短信写入数据库-----------------------------------------------*/
          System.out.println("开始备份短信！！！");
-		db.beginTransaction(); // 开始事务处理
 		if (cursor.moveToFirst())
 		{
 			String address; // 发件人地址 手机号
@@ -327,17 +317,7 @@ public class BackupService extends Service
 			int _person = cursor.getColumnIndex("person"); // 发件人，返回一个数字就是联系人列表里的序号
 			int _body = cursor.getColumnIndex("body"); // 短消息内容
 			int _date = cursor.getColumnIndex("date"); // 日期 long型，
-			int _type = cursor.getColumnIndex("type"); // 类型 1是接收到的，2是发出的
-			
-			while (db.isDbLockedByCurrentThread()){  
-			       try {  
-			            Thread.sleep(10);  
-			        } catch (InterruptedException e) {  
-			            e.printStackTrace();  
-			        }  
-			    }  
-			
-			//System.out.println("开始写入数据库");
+			int _type = cursor.getColumnIndex("type"); // 类型 1是接收到的，2是发出的  
 			do
 			{
 				while (db.isDbLockedByCurrentThread()){  
@@ -354,7 +334,7 @@ public class BackupService extends Service
 				date = cursor.getString(_date); // 日期 long型，
 				type = cursor.getInt(_type); // 类型 1是接收到的，2是发出的
                 
-				System.out.println("beifenzhong");
+				System.out.println("备份中");
 				
 				String insert_sql = "insert into sms(address, person, body,date, type) values(?, ?, ?, ?, ?);";
 				Object[] bindArgs = new Object[]
@@ -362,11 +342,11 @@ public class BackupService extends Service
 				db.execSQL(insert_sql, bindArgs);
 			} while (cursor.moveToNext());
 			
+			//db.setTransactionSuccessful(); // 设置事务处理成功，不设置会自动回滚不提交
+			//db.endTransaction(); //
 			
 			cursor.close();
 			cursor = null;
-			db.setTransactionSuccessful(); // 设置事务处理成功，不设置会自动回滚不提交
-			db.endTransaction(); //
 			System.out.println("写入数据库完成");
 		}
 		return true;
@@ -375,7 +355,8 @@ public class BackupService extends Service
 
 	// 在SD卡建立数据库
 	// type：数据库类型：短信，联系人等
-	@SuppressLint("SimpleDateFormat") public SQLiteDatabase createDatabase() 
+	@SuppressLint("SimpleDateFormat") 
+	public SQLiteDatabase createDatabase() 
 	{
 		/*------------------------------判断是否有SD卡-------------------------------------------------------*/
 		// Is there any SD?
@@ -423,7 +404,23 @@ public class BackupService extends Service
 		// 数据库建立成功，返回
 		return db;
 	}
+	public SQLiteDatabase openDatabase() 
+	{
+		/*------------------------------判断是否有SD卡-------------------------------------------------------*/
+		// Is there any SD?
+		boolean sdExist = android.os.Environment.MEDIA_MOUNTED.equals(android.os.Environment.getExternalStorageState());
 
+		if (!sdExist)
+		{// 若是不存在
+			return null;
+		}
+		/*------------------------------在SD卡新建数据库-------------------------------------------------------*/
+		SQLiteDatabase db;
+		String dbPath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/ExtraBackup/";
+		File dbf = new File(dbPath + content);
+		db = SQLiteDatabase.openOrCreateDatabase(dbf, null);
+		return db;
+	}
 	public boolean send()
 	{
 
