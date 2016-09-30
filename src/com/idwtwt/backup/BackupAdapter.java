@@ -1,27 +1,15 @@
 package com.idwtwt.backup;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-import javax.mail.internet.NewsAddress;
-
 import com.idwtwt.extrabackup.R;
-
-import android.R.integer;
 import android.content.Context;
-import android.content.Intent;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
-import android.widget.ListView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class BackupAdapter extends BaseAdapter
 {
@@ -41,46 +29,46 @@ public class BackupAdapter extends BaseAdapter
 	@Override
 	public int getCount()
 	{
-		// TODO Auto-generated method stub
+	
 		return mList.size();
 	}
 
 	@Override
 	public Object getItem(int position)
 	{
-		// TODO Auto-generated method stub
+	
 		return null;
 	}
 
 	@Override
 	public long getItemId(int position)
 	{
-		// TODO Auto-generated method stub
+	
 		return 0;
 	}
 
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent)
 	{
-		// TODO Auto-generated method stub
+		
 		Item item = mList.get(position);
 		ViewHolder viewHolder = null;
-		if (convertView == null)//√ª”–item±ª∏≤∏«
+		if (convertView == null)
 		{
 			convertView = mInflater.inflate(R.layout.item, null);
 			viewHolder = new ViewHolder();
 			viewHolder.header_iv = (ImageView)convertView.findViewById(R.id.header_iv);
 			viewHolder.name_tv = (TextView)convertView.findViewById(R.id.name_tv);
 			viewHolder.check_iv = (ImageView)convertView.findViewById(R.id.check_iv);
-			convertView.setTag(viewHolder);//converViewŒ™ø’£¨Ω´ ˝æ›∑≈µΩÃÌº”µΩconverView
+			convertView.setTag(viewHolder);
 		}
 		else 
 		{
-			viewHolder = (ViewHolder)convertView.getTag();//»°≥ˆ ˝æ›
+			viewHolder = (ViewHolder)convertView.getTag();
 		}
-		viewHolder.header_iv.setImageResource(item.getHeader());//∂‘”¶logo
-		viewHolder.name_tv.setText(item.getName());//∂‘”¶Œƒ◊÷
-		viewHolder.check_iv.setImageResource(item.getCheck());//∂‘”¶—°÷–
+		viewHolder.header_iv.setImageResource(item.getHeader());//logo
+		viewHolder.name_tv.setText(item.getName());//Êñá‰ª∂Âêç
+		viewHolder.check_iv.setImageResource(item.getCheck());
 		
 		viewHolder.check_iv.setTag(new StatusOfCheck(item.getCheck(), position));
 		viewHolder.check_iv.setOnClickListener(listener);
@@ -94,28 +82,27 @@ public class BackupAdapter extends BaseAdapter
 		@Override
 		public void onClick(View v)
 		{
-			// TODO Auto-generated method stub
+			
 			StatusOfCheck statusOfCheck = (StatusOfCheck)v.getTag();
-			int position = statusOfCheck.getPosition();//check itemµƒŒª÷√
-			int status = statusOfCheck.getStatus();//check itemµƒ◊¥Ã¨
+			int position = statusOfCheck.getPosition();//check item
+			int status = statusOfCheck.getStatus();//check item„ÄÅ
 			
 			
 			System.out.println("---" + position + ":" + status);
 			if(status == CHECK_OFF)
 			{
-				((ImageView)v).setImageResource(R.drawable.btn_check_on_pressed);//…Ë÷√view≤„◊¥Ã¨Õº±Í
-				(mList.get(position)).check = R.drawable.btn_check_on_pressed; //…Ë÷√mode£® ˝æ›£©≤„◊¥Ã¨
+				((ImageView)v).setImageResource(R.drawable.btn_check_on_pressed);
+				(mList.get(position)).check = R.drawable.btn_check_on_pressed; 
 				statusOfCheck.setStatus(CHECK_ON);//
 				
 			}
 			else {
 				
-				((ImageView)v).setImageResource(R.drawable.btn_check_off);//…Ë÷√view≤„◊¥Ã¨Õº±Í
-				(mList.get(position)).check = R.drawable.btn_check_off;//…Ë÷√mode£® ˝æ›£©≤„◊¥Ã¨
+				((ImageView)v).setImageResource(R.drawable.btn_check_off);
+				(mList.get(position)).check = R.drawable.btn_check_off;
 				statusOfCheck.setStatus(CHECK_OFF);
 			}
 			
-			//»Áπ˚ ≤√¥∂º√ª”–—°‘Ò£¨ƒ«“≤æÕ «≤ª”√±∏∑›¡À£¨À˘“‘»√±∏∑›∞¥≈•Œﬁ–ß
 			boolean isHave = false;
 			for (int i = 0; i < mList.size(); i++)
 			{
@@ -168,9 +155,5 @@ public class BackupAdapter extends BaseAdapter
 			this.position = position;
 			
 		}
-		
-		
-		
-		
 	}
 }

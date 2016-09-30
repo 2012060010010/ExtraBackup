@@ -49,15 +49,14 @@ public class BackupActivity extends Activity
 		@Override
 		public void onServiceDisconnected(ComponentName name)
 		{
-			// TODO Auto-generated method stub
-			Toast.makeText(BackupActivity.this, "±¸·İ·şÎñÒì³£ÍË³ö", Toast.LENGTH_LONG).show();
+	
+			Toast.makeText(BackupActivity.this, "è¿æ¥å¤±è´¥", Toast.LENGTH_LONG).show();
 
 		}
 
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service)
 		{
-			// TODO Auto-generated method stub
 			binder = (BackupService.BackupBinder) service;
 			isRunning = true;
 		}
@@ -81,7 +80,7 @@ public class BackupActivity extends Activity
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
-		// TODO Auto-generated method stub
+		
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.backup);
 		Intent intent = getIntent();
@@ -92,22 +91,22 @@ public class BackupActivity extends Activity
 
 	private void init()
 	{
-		// TODO Auto-generated method stub
+	
 		listView = (ListView) findViewById(R.id.listview_backup);
 		start_backup_btn = (Button) findViewById(R.id.start_buckup);
 		check_btn = (ImageButton)findViewById(R.id.check_btn);
 		title_tv = (TextView) findViewById(R.id.title_tv);
 
-		title_tv.setText("±¸·İµ½" + where);
+		title_tv.setText("å¤‡ä»½åˆ°" + where);
 		/******************************************************************************************/
 		start_backup_btn.setOnClickListener(listener);
 		check_btn.setOnClickListener(check_listener);
 		check_btn.setTag(new Integer(CHECK_ON));
-		/************************************ listViewÏà¹Ø *******************************************************/
+		/************************************ listView *******************************************************/
 		String name_array[] =
-		{ "ÁªÏµÈË", "¶ÌĞÅ" };
+		{ "è”ç³»äºº", "çŸ­ä¿¡","Í¨é€šè¯è®°å½•" };
 		int header_array[] =
-		{ R.drawable.contacts, R.drawable.sms };
+		{ R.drawable.contacts, R.drawable.sms,R.drawable.calls };
 		mList = new ArrayList<Item>();
 		for (int i = 0; i < header_array.length; i++)
 		{
@@ -117,12 +116,11 @@ public class BackupActivity extends Activity
 		mAdapter = new BackupAdapter(this, mList);
 		listView.setAdapter(mAdapter);
 
-		/********************************* serviceÏà¹Ø **********************************************************/
+		/********************************* service*********************************************************/
 
-		Intent intent = new Intent();// Êı¾İ¸üĞÂ·şÎñ
+		Intent intent = new Intent();
 		intent.setClass(BackupActivity.this, BackupService.class);
 		bindService(intent, connection, Service.BIND_AUTO_CREATE);
-		/********************************* ±¸·İ×´Ì¬Ïà¹Ø **********************************************************/
 		IntentFilter filter = new IntentFilter();
 		filter.addAction("com.idwtwt.restore.STATUES_REFRESH");
 		
@@ -144,33 +142,38 @@ public class BackupActivity extends Activity
 				
 				boolean contacts_action = false;
 				boolean sms_action = false;
+				boolean calls_action = false;
 				boolean net_action = false;
-				dialog = ProgressDialog.show(BackupActivity.this, "±¸·İÊı¾İ", "±¸·İÁªÏµÈËÊı¾İ...");
-				if (mList.get(0).getCheck() == CHECK_ON)// Ñ¡ÖĞ±¸·İÁªÏµÈË
+				dialog = ProgressDialog.show(BackupActivity.this, "å¤‡ä»½", "å¼€å§‹..");
+				if (mList.get(0).getCheck() == CHECK_ON)// é€‰ä¸­
 				{
 					
 					contacts_action = true;
 				}
-				if (mList.get(1).getCheck() == CHECK_ON)// Ñ¡ÖĞ±¸·İ¶ÌĞÅ
+				if (mList.get(1).getCheck() == CHECK_ON)
 				{	
 					sms_action = true;
 				}
-				if (where.equals("ÔÆ¶Ë"))// ±¸·İµ½ÔÆ¶Ë
+				if (mList.get(2).getCheck() == CHECK_ON)
+				{	
+					calls_action = true;
+				}
+				if (where.equals("Cloud"))
 				{
 					
 					net_action = true;
 					
 				}
 				
-				binder.getService().backupAction(contacts_action, sms_action, net_action);
+				binder.getService().backupAction(contacts_action, sms_action,calls_action,net_action);
 			} else
 			{
-				Toast.makeText(BackupActivity.this, "·şÎñÆô¶¯Ê§°Ü", Toast.LENGTH_SHORT).show();
+				Toast.makeText(BackupActivity.this, "å¤‡ä»½å¤±è´¥", Toast.LENGTH_SHORT).show();
 			}
 
 		}
 	};
-	//ÊµÏÖµã»÷titlebarÉÏµÄcheck°´Å¥¸Ä±äËùÓĞÁĞ±íitemµÄ×´Ì¬
+	
 	private OnClickListener check_listener = new OnClickListener()
 	{
 		
@@ -206,7 +209,6 @@ public class BackupActivity extends Activity
 	@Override
 	protected void onDestroy()
 	{
-		// TODO Auto-generated method stub
 		super.onDestroy();
 	}
 	
@@ -221,18 +223,18 @@ public class BackupActivity extends Activity
 			
 			case MESSAGE_TYPE_STATUES_CONTACT_DONE:
 				dialog.dismiss();
-				dialog = ProgressDialog.show(BackupActivity.this, "±¸·İÊı¾İ", "±¸·İ¶ÌĞÅÊı¾İ...");
-				//System.out.println("¿ªÊ¼±¸·İ¶ÌĞÅ");
+				dialog = ProgressDialog.show(BackupActivity.this, "è¿æ¥", "æˆåŠŸ...");
+			
 				break;
 			case MESSAGE_TYPE_STATUES_SMS_DONE:
 				dialog.dismiss();
-				if (where.equals("ÔÆ¶Ë"))// ±¸·İµ½ÔÆ¶Ë
+				if (where.equals("Cloud"))
 				{
-					dialog = ProgressDialog.show(BackupActivity.this, "±¸·İÊı¾İ", "ÉÏ´«µ½ÔÆ¶Ë...");
+					dialog = ProgressDialog.show(BackupActivity.this, "å¤‡ä»½åˆ°", "CLoud...");
 					
 				}
 				else {
-					Toast.makeText(BackupActivity.this,"±¸·İÊı¾İÍê³É", Toast.LENGTH_SHORT).show();
+					Toast.makeText(BackupActivity.this,"å¤‡ä»½æˆåŠŸ", Toast.LENGTH_SHORT).show();
 				}
 				
 				
@@ -240,13 +242,13 @@ public class BackupActivity extends Activity
 			case MESSAGE_TYPE_STATUES_NET_DONE:
 				
 				dialog.dismiss();
-				Toast.makeText(BackupActivity.this,"±¸·İÊı¾İÍê³É", Toast.LENGTH_SHORT).show();
+				Toast.makeText(BackupActivity.this,"å¤‡ä»½åˆ°äº‘ç«¯æˆåŠŸ", Toast.LENGTH_SHORT).show();
 				
 				break;
 			case MESSAGE_TYPE_STATUES_NET_ERRO:
 				
 				dialog.dismiss();
-				Toast.makeText(BackupActivity.this,"ÍøÂçÒì³£", Toast.LENGTH_SHORT).show();
+				Toast.makeText(BackupActivity.this,"å¤‡ä»½åˆ°äº‘ç«¯å¤±è´¥", Toast.LENGTH_SHORT).show();
 				
 				break;
 			}

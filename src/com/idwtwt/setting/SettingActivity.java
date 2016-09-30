@@ -2,22 +2,19 @@ package com.idwtwt.setting;
 
 import com.idwtwt.extrabackup.R;
 import com.idwtwt.main.MainActivity;
-import com.idwtwt.start.StartupActivity;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
 public class SettingActivity extends Activity
 {
-	private SharedPreferences preferences; //配置信息
+	private SharedPreferences preferences; 
 	private SharedPreferences.Editor editor; 
 	private Intent mainIntent;
 	
@@ -35,7 +32,6 @@ public class SettingActivity extends Activity
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
-		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.setting);
 		init();
@@ -88,11 +84,7 @@ public class SettingActivity extends Activity
 			}
 			
 		}
-
-		
-
-		
-	};
+   };
 	
 	private void save_setting()
 	{
@@ -100,25 +92,25 @@ public class SettingActivity extends Activity
 		password = password_edit.getText().toString().trim();
 		host = host_edit.getText().toString().trim();
 		
-		if (user.equals("") || password.equals("") || host.equals(""))//为空，说明没设置好，强制要求重新设置
+		if (user.equals("") || password.equals("") || host.equals(""))
 		{
-			Toast.makeText(SettingActivity.this, "信息未填写完整", Toast.LENGTH_SHORT).show();
+			Toast.makeText(SettingActivity.this, "璁剧疆涓嶈兘涓虹┖", Toast.LENGTH_SHORT).show();
 			return;
 		}
 		
-		editor.putString("user", user);//设置好后，重新写入数据
+		editor.putString("user", user);
 		editor.putString("password", password);
 		editor.putString("host", host);
 		editor.commit();
 		
 		
-		finish();//关闭设置界面
+		finish();
 		
 	}
 	
 	private void cancel()
 	{
-		finish();//关闭设置界面	
+		finish();
 	}
 
 }

@@ -13,7 +13,6 @@ public class Item
 		this.header = header;
 		this.name = name;
 		this.check = check;
-		
 	}
 	public int getHeader()
 	{

@@ -1,15 +1,13 @@
 package com.idwtwt.backup;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URI;
+import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Timer;
-import java.util.TimerTask;
-
-import com.idwtwt.extrabackup.R.id;
-import com.idwtwt.net.DownloadMail;
+import com.idwtwt.encrypt.EncryAES;
 import com.idwtwt.net.UploadMail;
 
 import android.R.integer;
@@ -30,6 +28,7 @@ import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.provider.CallLog;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
@@ -45,7 +44,7 @@ public class BackupService extends Service
 
 	UploadMail uploadMail;
 
-	private SharedPreferences preferences; // 配置信息
+	private SharedPreferences preferences; // 鍒嗕韩璁剧疆
 
 	private String host;
 	private String user;
@@ -54,7 +53,9 @@ public class BackupService extends Service
 	private Thread thread;
 	private Handler handler;
 	private Timer timer;
-	
+	private String filePath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/ExtraBackup/";
+	   // 鏂囦欢璺緞
+	private SimpleDateFormat format = new SimpleDateFormat("MMddHH");
 	
 	private final int MESSAGE_TYPE_STATUES_SMS_DONE = 0;
 	private final int MESSAGE_TYPE_STATUES_CONTACT_DONE = 1;
@@ -65,12 +66,13 @@ public class BackupService extends Service
 	public boolean contacts_action = false;
 	public boolean sms_action = false;
 	public boolean net_action = false;
-
+    public boolean calls_action=false;
 	public class BackupBinder extends Binder
 	{
 		public BackupService getService()
 		{
 			return BackupService.this;
+		
 		}
 
 	}
@@ -80,14 +82,13 @@ public class BackupService extends Service
 	@Override
 	public IBinder onBind(Intent intent)
 	{
-		// TODO Auto-generated method stub
 		return binder;
 	}
 
 	@Override
 	public void onCreate()
 	{
-		// TODO Auto-generated method stub
+		
 		super.onCreate();
 		preferences = getSharedPreferences("ExtraBackup", MODE_PRIVATE);
 
@@ -95,7 +96,6 @@ public class BackupService extends Service
 		password = preferences.getString("password", "");
 		host = preferences.getString("host", "");
 		
-		//网络超时，会有消息发过来，然后处理
 		handler = new Handler()
 		{
 
@@ -118,55 +118,61 @@ public class BackupService extends Service
 	@Override
 	public void onDestroy()
 	{
-		// TODO Auto-generated method stub
+		
 		super.onDestroy();
 	}
 
 	@Override
 	public boolean onUnbind(Intent intent)
 	{
-		// TODO Auto-generated method stub
 		return super.onUnbind(intent);
 	}
 
 	
-	public void backupAction(boolean action1,boolean action2,boolean action3)
+	public void backupAction(boolean action1,boolean action2,boolean action4,boolean action3)
 	{
 		contacts_action = action1;
 		sms_action = action2;
 		net_action = action3;
+		calls_action=action4;
 		Thread contactsms=new Thread() 
 		{
 			@Override
 			public void run()
 			{	
 				Intent intent = new Intent();
+				createDir();
 				intent.setAction("com.idwtwt.restore.STATUES_REFRESH");
-				SQLiteDatabase db = createDatabase();
-				db.close();
+				if(calls_action){
+					 boolean call=backupCallstoSD();
+					 if (call)
+						{   
+							intent.putExtra("type", MESSAGE_TYPE_STATUES_CONTACT_DONE); 
+							sendBroadcast(intent);
+						}
+				}
 				if (contacts_action)
-				{   SQLiteDatabase db1 = openDatabase();
-				    boolean contact=backupContactToSD(db1);
+				{  
+				    boolean contact=backupContactToSD();
+				 
 					if (contact)
-					{   System.out.println("1");
-						db1.close();
+					{  
 						intent.putExtra("type", MESSAGE_TYPE_STATUES_CONTACT_DONE); 
 						sendBroadcast(intent);
 					}
 				}
 				if (sms_action)
-				{  SQLiteDatabase db2 = openDatabase();
-				    System.out.println("2");
-				    boolean sms=backupSMStoSD(db2);
+				{ 
+				    boolean sms=backupSMStoSD();
 					if (sms)
 					{
 						intent.putExtra("type",MESSAGE_TYPE_STATUES_SMS_DONE ); 
 						sendBroadcast(intent);
 					}
-					db2.close();
 				}
 			}
-		};System.out.println("3");
+		};
+	
 		contactsms.start();
 		
 		
@@ -193,10 +199,10 @@ public class BackupService extends Service
 //					{   
 //					try
 //					{
-//						Thread.sleep(100);//睡眠一下
+//						Thread.sleep(100);//睡锟斤拷一锟斤拷
 //					} catch (InterruptedException e)
 //					{
-//						// TODO Auto-generated catch block
+//						
 //						e.printStackTrace();
 //					}
 //						Intent intent = new Intent();
@@ -213,214 +219,292 @@ public class BackupService extends Service
 		}
 		
 	}
-	
-	
-	// 联系人备份函数
-		public boolean backupContactToSD(SQLiteDatabase db)
+ public void createDir(){
+	 File dir=new File(filePath);
+	 if (!dir.exists())
+		{
+			dir.mkdir();
+		}
+}
+
+		@SuppressLint("SimpleDateFormat") 
+	public boolean backupContactToSD()
 		{
 
-			
-			int contacts_id;
-			String person_name;
-			String  tel_number;
-			String e_mail;
-			Cursor cursor = getContentResolver().query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
-			// 如果记录不为空
-			
-			System.out.println("开始备份联系人");
-	/********************************************开始事务***********************************************************************/
-			db.beginTransaction(); // 开始事务处理
-	
-			if (cursor.getCount() > 0)
-			{
-			 while (cursor.moveToNext())
-				{
-	
-					contacts_id = cursor.getInt(cursor.getColumnIndex(Contacts._ID));// 获得contacts
-																					// 联系人ID
-					// 获取联系人名字
-					person_name=cursor.getString(cursor.getColumnIndex(Contacts.DISPLAY_NAME));
-					
-					//使用ContentResolver查找联系人号码
-					Cursor phones = getContentResolver().query(CommonDataKinds.Phone.CONTENT_URI,
-							null, CommonDataKinds.Phone.CONTACT_ID + " = " +contacts_id,
-					null, null);
-					if(phones.moveToFirst()){
-					tel_number=phones.getString(phones.getColumnIndex(CommonDataKinds.Phone.NUMBER));
-					}else{
-						tel_number=null;
-					}
-					phones.close();
-					//使用ContentResolver查找联系人e_mail address
-					Cursor emails = getContentResolver().query(CommonDataKinds.Email.CONTENT_URI,
-							null, CommonDataKinds.Email.CONTACT_ID + " = " +contacts_id,
-					null, null);
-					if(emails.moveToFirst()){
-					e_mail=emails.getString(emails.getColumnIndex(CommonDataKinds.Email.DATA));
-					}else{
-						e_mail=null;
-					}
-					emails.close();
-	                   // 将取出的数据插入新建的数据库
-						String insert_sql = "insert into contacts values(null, ?, ?, ?, ?)";
-						Object[] bindArgs = new Object[]
-						{ contacts_id, person_name, tel_number,e_mail};
-						db.execSQL(insert_sql, bindArgs);	
+			   String name = format.format(new Date()) + "contact.vcf";
+			   OutputStreamWriter outWriter;
+			   File contactFile;
+				try {
+				    contactFile = new File(filePath, name);
+					FileOutputStream os = new FileOutputStream(contactFile);
+					outWriter = new OutputStreamWriter(os, "UTF-8");
+				} catch (Exception e) {
+					return false;
 				}
-	
+				
+			Cursor cursor = getContentResolver().query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
+			
+			int contactsID = cursor
+					.getColumnIndex(ContactsContract.Contacts._ID);
+			for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
+				try {
+					outWriter.write("BEGIN:VCARD\r\n");
+				} catch (IOException e1) {
+				
+					e1.printStackTrace();
+				}
+				try {
+					outWriter.write("VERSION:3.0\r\n");
+				} catch (IOException e) {
+					
+					e.printStackTrace();
+				}
+
+				int contactid = cursor.getInt(contactsID);
+				Cursor rawcur = getContentResolver()
+						.query(ContactsContract.RawContacts.CONTENT_URI,
+								null,
+								ContactsContract.RawContacts.CONTACT_ID + " = "
+										+ contactid, null, null);
+				if (rawcur.moveToFirst()) {
+					int rawid = cursor.getInt(cursor
+							.getColumnIndex(ContactsContract.RawContacts._ID));
+					Cursor datas = getContentResolver().query(
+							ContactsContract.Data.CONTENT_URI, null,
+							ContactsContract.Data.RAW_CONTACT_ID + " = " + rawid,
+							null, null);
+					for (datas.moveToFirst(); !datas.isAfterLast(); datas
+							.moveToNext()) {
+						try {
+							storeContact(datas, outWriter);
+						} catch (IOException e) {
+							
+							e.printStackTrace();
+						}
+					}
+					datas.close();
+				}
+				rawcur.close();
+				try {
+					outWriter.write("END:VCARD\r\n");
+				} catch (IOException e) {
+			
+					e.printStackTrace();
+				}
+				try {
+					outWriter.flush();
+				} catch (IOException e) {
+			
+					e.printStackTrace();
+				}
+
+			}
+			try {
+				outWriter.close();
+			} catch (IOException e) {
+		
+				e.printStackTrace();
+			}
+			cursor.close();
+          
+           //EncryAES.Encryption(contactFile,name,password);//鍔犲瘑
+			return true;
+		}
+
+
+
+	@SuppressLint("SimpleDateFormat")
+	public boolean backupSMStoSD() 
+	{
+		   String name = format.format(new Date()) + "sms.csv";
+		   OutputStreamWriter outWriter;
+		   File smsFile;
+			try {
+				 smsFile = new File(filePath, name);
+				System.out.println(smsFile.getAbsolutePath());
+				FileOutputStream os = new FileOutputStream(smsFile);
+				outWriter = new OutputStreamWriter(os, "UTF-8");
+			} catch (Exception e) {
+				return false;
+			}
+
+
+		Cursor cursor = getContentResolver().query(Uri.parse("content://sms/"),
+				null, null, null, null);
+		System.out.println(cursor.getCount());
+		if (cursor.moveToFirst())
+		{
+			int _address = cursor.getColumnIndex("address"); 
+			int _person = cursor.getColumnIndex("person");
+			int _body = cursor.getColumnIndex("body"); 
+			int _date = cursor.getColumnIndex("date"); 
+			int _type = cursor.getColumnIndex("type");
+			do
+			{  
+
+				if (cursor.getString(_body) != null)
+					try {
+						outWriter.write("SMS:" + cursor.getString(_address) + ","
+								+ cursor.getInt(_person) + ","
+								+ cursor.getString(_body) + ","
+								+ cursor.getString(_date) +","
+								+ cursor.getInt(_type) +"\r\n");
+					} catch (IOException e) {
+						e.printStackTrace();
+					
+					}
+				
+			} while (cursor.moveToNext());
+			
+			try {
+				outWriter.close();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 			cursor.close();
 			cursor = null;
-			db.setTransactionSuccessful(); // 设置事务处理成功，不设置会自动回滚不提交
-		/********************************************结束事务***********************************************************************/
-			db.endTransaction(); //
-           System.out.println("联系人备份完成");
-			return true;
+		
 		}
-		
-	// 短信备份函数
-	public boolean backupSMStoSD(SQLiteDatabase db)
-	{
-		/*------------------------------------读取短信数据库-------------------------------------------------*/
-		Uri SMS_URI = Uri.parse("content://sms/");
-		String[] projection =new String[]
-		{        "_id", // 短信消息号
-				"address", // 发件人地址 手机号
-				"person", // 发件人，返回一个数字就是联系人列表里的序号
-				"body", // 短消息内容
-				"date", // 日期 long型，
-			    "type" // 类型 1是接收到的，2是发出的
-		};
-		
-		Cursor cursor =getContentResolver().query(SMS_URI, projection, null, null, "date desc");
-		System.out.println("获取短信成功！！！");
-		while (db.isDbLockedByCurrentThread()){  
-	       try {  
-	            Thread.sleep(10);  
-	        } catch (InterruptedException e) {  
-	            e.printStackTrace();  
-	        }  
-	    }  
-		//db.beginTransaction(); // 开始事务处理
-		
-		/*--------------------------------------将短信写入数据库-----------------------------------------------*/
-         System.out.println("开始备份短信！！！");
-		if (cursor.moveToFirst())
-		{
-			String address; // 发件人地址 手机号
-			int person; // 发件人，返回一个数字就是联系人列表里的序号
-			String body; // 短消息内容
-			String date; // 日期 long型，
-			int type; // 类型 1是接收到的，2是发出的
-
-			int _address = cursor.getColumnIndex("address"); // 发件人地址 手机号
-			int _person = cursor.getColumnIndex("person"); // 发件人，返回一个数字就是联系人列表里的序号
-			int _body = cursor.getColumnIndex("body"); // 短消息内容
-			int _date = cursor.getColumnIndex("date"); // 日期 long型，
-			int _type = cursor.getColumnIndex("type"); // 类型 1是接收到的，2是发出的  
-			do
-			{
-				while (db.isDbLockedByCurrentThread()){  
-				       try {  
-				            Thread.sleep(10);  
-				        } catch (InterruptedException e) {  
-				            e.printStackTrace();  
-				        }  
-				    }  
-				
-				address = cursor.getString(_address); // 发件人地址 手机号
-				person = cursor.getInt(_person); // 发件人，返回一个数字就是联系人列表里的序号
-				body = cursor.getString(_body); // 短消息内容
-				date = cursor.getString(_date); // 日期 long型，
-				type = cursor.getInt(_type); // 类型 1是接收到的，2是发出的
-                
-				System.out.println("备份中");
-				
-				String insert_sql = "insert into sms(address, person, body,date, type) values(?, ?, ?, ?, ?);";
-				Object[] bindArgs = new Object[]
-				{ address, person, body, date, type };
-				db.execSQL(insert_sql, bindArgs);
-			} while (cursor.moveToNext());
-			
-			//db.setTransactionSuccessful(); // 设置事务处理成功，不设置会自动回滚不提交
-			//db.endTransaction(); //
-			
-			cursor.close();
-			cursor = null;
-			System.out.println("写入数据库完成");
-		}
+	   //EncryAES.Encryption(smsFile,name,password);
 		return true;
 
 	}
 
-	// 在SD卡建立数据库
-	// type：数据库类型：短信，联系人等
-	@SuppressLint("SimpleDateFormat") 
-	public SQLiteDatabase createDatabase() 
-	{
-		/*------------------------------判断是否有SD卡-------------------------------------------------------*/
-		// Is there any SD?
-		boolean sdExist = android.os.Environment.MEDIA_MOUNTED.equals(android.os.Environment.getExternalStorageState());
+@SuppressLint("SimpleDateFormat")
+public boolean backupCallstoSD()  {
+	  
+   String name = format.format(new Date()) + "calls.vcl";
 
-		if (!sdExist)
-		{// 若是不存在,
-
-			return null;
+		OutputStreamWriter outWriter;
+		File callsFile;
+		try {
+		    callsFile = new File(filePath + name);
+			FileOutputStream os = new FileOutputStream(callsFile);
+			outWriter = new OutputStreamWriter(os, "UTF-8");
+		} catch (Exception e) {
+			return false;
 		}
-		/*------------------------------在SD卡新建数据库-------------------------------------------------------*/
-		SQLiteDatabase db;
-		String dbPath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/ExtraBackup/";
-		// 日期作为备份数据库的文件名
-		SimpleDateFormat format = new SimpleDateFormat("yyyy年MM月dd日 HH时mm分");
-		String name = format.format(new Date()) + ".db";
-		content = name;
-
-		File dbp = new File(dbPath);
-		File dbf = new File(dbPath + name);
-		// 如果路径不存在，建立路径
-		if (!dbp.exists())
-		{
-			dbp.mkdir();
+		Cursor cursor = getContentResolver().query(CallLog.Calls.CONTENT_URI,
+				null, null, null, null);
+		
+		int idxNumber = cursor.getColumnIndex(CallLog.Calls.NUMBER);
+		int idxDate = cursor.getColumnIndex(CallLog.Calls.DATE);
+		int idxType = cursor.getColumnIndex(CallLog.Calls.TYPE);
+		int idxDur = cursor.getColumnIndex(CallLog.Calls.DURATION);
+		
+		while (cursor.moveToNext()) {
+			try {
+				outWriter.write("CALL:"
+				        + cursor.getString(idxNumber) + ","
+						+ cursor.getLong(idxDate) + ","
+				        + cursor.getString(idxType)+ ","
+						+ cursor.getInt(idxDur) + "\r\n");
+			} catch (IOException e) {
+			
+				e.printStackTrace();
+			}
+			try {
+				outWriter.flush();
+			} catch (IOException e) {
+				
+				e.printStackTrace();
+			}
 		}
-
-		// 数据库文件创建成功
-			db = SQLiteDatabase.openOrCreateDatabase(dbf, null);
+       
+		try {
+			outWriter.close();
+		} catch (IOException e) {
+		
+			e.printStackTrace();
+		}
+		cursor.close();
+		//EncryAES.Encryption(callsFile,name,password);
+		return true;
+	}
+public void storeContact(Cursor cur, OutputStreamWriter outWriter)
+		throws IOException {
+	String t = cur.getString(cur
+			.getColumnIndex(ContactsContract.Data.MIMETYPE));
+	if (ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE.equals(t)) {
+		String phone = cur
+				.getString(cur
+						.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+		int type = cur
+				.getInt(cur
+						.getColumnIndex(ContactsContract.CommonDataKinds.Phone.TYPE));
+		switch (type) {
+		case ContactsContract.CommonDataKinds.Phone.TYPE_HOME:
+			outWriter.write("TEL;TYPE=HOME:" + phone + "\r\n");
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE:
+			outWriter.write("TEL;TYPE=CELL:" + phone + "\r\n");
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_MAIN:
+			outWriter.write("TEL;TYPE=PREF:" + phone + "\r\n");
+			break;
+		default:
+			outWriter.write("TEL;TYPE=WORK:" + phone + "\r\n");
+			break;
+		}
+	} else if (ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE
+			.equals(t)) {
+		String email = cur
+				.getString(cur
+						.getColumnIndex(ContactsContract.CommonDataKinds.Email.DATA));
+		int type = cur
+				.getInt(cur
+						.getColumnIndex(ContactsContract.CommonDataKinds.Email.TYPE));
+		switch (type) {
+		case ContactsContract.CommonDataKinds.Email.TYPE_HOME:
+			outWriter.write("EMAIL;TYPE=HOME:" + email + "\r\n");
+			break;
+		case ContactsContract.CommonDataKinds.Email.TYPE_WORK:
+			outWriter.write("EMAIL;TYPE=PREF:" + email + "\r\n");
+			break;
+		default:
+			outWriter.write("EMAIL;TYPE=OTHER" + email + "\r\n");
+			break;
+		}
+	} else if (ContactsContract.CommonDataKinds.Im.CONTENT_ITEM_TYPE
+			.equals(t)) {
+		String im = cur.getString(cur
+				.getColumnIndex(ContactsContract.CommonDataKinds.Im.DATA));
+		int protocol = cur
+				.getInt(cur
+						.getColumnIndex(ContactsContract.CommonDataKinds.Im.PROTOCOL));
+		switch (protocol) {
+		case ContactsContract.CommonDataKinds.Im.PROTOCOL_GOOGLE_TALK:
+			outWriter.write("X-GOOGLE_TALK" + im + "\r\n");
+			break;
+		case ContactsContract.CommonDataKinds.Im.PROTOCOL_QQ:
+			outWriter.write("X-QQ" + im + "\r\n");
+			break;
+		default:
+			outWriter.write("X-OTHER" + im + "\r\n");
+			break;
+		}
+	} else if (ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE
+			.equals(t)) {
+		String dname = cur
+				.getString(cur
+						.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME));
+		String fname = cur
+				.getString(cur
+						.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME));
+		String gname = cur
+				.getString(cur
+						.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME));
+		if (fname != null)
+			outWriter.write("N:" + fname + ";");
+		else
+			outWriter.write("N:;");
+		if (gname != null)
+			outWriter.write(gname);
+		outWriter.write(";;;\r\n");
+		outWriter.write("FN:" + dname + "\r\n");
+	}
+}
 	
-		String sql = "create table if not exists contacts("
-		        + "_id integer primary key autoincrement," 
-				+ " contacts_id integer,"//联系人ID
-		        + "person_name text, "//名字
-				+ " tel_number varchar(200)," //电话
-				+ " e_mail varchar(200));" ;//邮箱
-		db.execSQL(sql);
-		sql = "create table if not exists sms(" 
-		        + "_id integer primary key autoincrement," // 短信消息号
-				+ "address varchar(255)," // 发件人地址 手机号
-				+ "person varchar(255)," // 发件人，返回一个数字就是联系人列表里的序号
-				+ "body text," // 短消息内容
-				+ "date varchar(255)," // 日期 long
-				+ "type integer);"; // 类型 1是接收到的，2是发出的  
-		db.execSQL(sql);
-		// 数据库建立成功，返回
-		return db;
-	}
-	public SQLiteDatabase openDatabase() 
-	{
-		/*------------------------------判断是否有SD卡-------------------------------------------------------*/
-		// Is there any SD?
-		boolean sdExist = android.os.Environment.MEDIA_MOUNTED.equals(android.os.Environment.getExternalStorageState());
-
-		if (!sdExist)
-		{// 若是不存在
-			return null;
-		}
-		/*------------------------------在SD卡新建数据库-------------------------------------------------------*/
-		SQLiteDatabase db;
-		String dbPath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/ExtraBackup/";
-		File dbf = new File(dbPath + content);
-		db = SQLiteDatabase.openOrCreateDatabase(dbf, null);
-		return db;
-	}
 	public boolean send()
 	{
 
@@ -432,7 +516,7 @@ public class BackupService extends Service
 					return true;
 				} catch (Exception e)
 				{
-					// TODO Auto-generated catch block
+					
 					e.printStackTrace();
 					return false;
 				}

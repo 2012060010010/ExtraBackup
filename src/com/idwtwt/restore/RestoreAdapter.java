@@ -43,7 +43,7 @@ public class RestoreAdapter extends BaseAdapter
 	@Override
 	public int getCount()
 	{
-		// TODO Auto-generated method stub
+		
 		return mList.size();
 	}
 
@@ -58,38 +58,38 @@ public class RestoreAdapter extends BaseAdapter
 	@Override
 	public Object getItem(int position)
 	{
-		// TODO Auto-generated method stub
+		
 		return mList.get(position);
 	}
 
 	@Override
 	public long getItemId(int position)
 	{
-		// TODO Auto-generated method stub
+	
 		return 0;
 	}
 
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent)
 	{
-		// TODO Auto-generated method stub
+	
 		ListItem item = mList.get(position);
 		ViewHolder viewHolder = null;
-		if (convertView == null)//Ã»ÓĞitem±»¸²¸Ç
+		if (convertView == null)//æ²¡æœ‰itemè¢«è¦†ç›–
 		{
 			convertView = mInflater.inflate(R.layout.list_item, null);
 			viewHolder = new ViewHolder();
 			viewHolder.name_tv = (TextView)convertView.findViewById(R.id.name_tv);
 			viewHolder.del_ib = (ImageButton)convertView.findViewById(R.id.delete_ib);
 			viewHolder.sel_iv = (ImageView)convertView.findViewById(R.id.select_iv);
-			convertView.setTag(viewHolder);//converViewÎª¿Õ£¬½«Êı¾İ·Åµ½Ìí¼Óµ½converView
+			convertView.setTag(viewHolder);//converViewä¸ºç©ºï¼Œå°†æ•°æ®æ”¾åˆ°æ·»åŠ åˆ°converView
 		}
 		else 
 		{
-			viewHolder = (ViewHolder)convertView.getTag();//È¡³öÊı¾İ
+			viewHolder = (ViewHolder)convertView.getTag();//å–å‡ºæ•°æ®
 		}
-		viewHolder.name_tv.setText(item.getName());//¶ÔÓ¦ÎÄ×Ö		
-		viewHolder.sel_iv.setImageResource(item.getSel_logo());//¶ÔÓ¦Ñ¡ÖĞ
+		viewHolder.name_tv.setText(item.getName());//å¯¹åº”æ–‡å­—		
+		viewHolder.sel_iv.setImageResource(item.getSel_logo());//å¯¹åº”é€‰ä¸­
 		
 		viewHolder.sel_iv.setTag(new Integer(position));
 		viewHolder.sel_iv.setOnClickListener(listener);
@@ -100,28 +100,28 @@ public class RestoreAdapter extends BaseAdapter
 		return convertView;
 	}
 
-	private OnClickListener listener = new OnClickListener()//Ñ¡Ôñ¼àÌıÆ÷
+	private OnClickListener listener = new OnClickListener()//é€‰æ‹©ç›‘å¬å™¨
 	{
 		
 		@Override
 		public void onClick(View v)
 		{
 			
-			/*****************************ÊµÏÖ±¸·İÎÄ¼şµ¥Ñ¡*******************************************/
-			if(selectedView != null)//Èç¹û²»Îª¿Õ£¬ËµÃ÷ÊÇ¸ÄÑ¡ĞĞÎª£¬ĞèÒª°ÑÇ°´ÎÑ¡ÖĞµÄÃğÁË£¬²ÅµãÁÁĞÂÑ¡ÖĞµÄ
+			/*****************************å®ç°å¤‡ä»½æ–‡ä»¶å•é€‰*******************************************/
+			if(selectedView != null)//å¦‚æœä¸ä¸ºç©ºï¼Œè¯´æ˜æ˜¯æ”¹é€‰è¡Œä¸ºï¼Œéœ€è¦æŠŠå‰æ¬¡é€‰ä¸­çš„ç­äº†ï¼Œæ‰ç‚¹äº®æ–°é€‰ä¸­çš„
 			{
-				mList.get(selected).setSel_logo(R.drawable.select_off);//mode²ã
-				selectedView.setImageResource(R.drawable.select_off);//view²ã
+				mList.get(selected).setSel_logo(R.drawable.select_off);//modeå±‚
+				selectedView.setImageResource(R.drawable.select_off);//viewå±‚
 			}
 			else {
-				activity.start_restore_btn.setEnabled(true);//ÓĞ±¸·İÎÄ¼ş±»Ñ¡ÖĞ,µ«Ö»¸Õ´ò¿ª½çÃæÊÇÓÃµÃ×ÅÕâÃ´×ö
+				activity.start_restore_btn.setEnabled(true);//æœ‰å¤‡ä»½æ–‡ä»¶è¢«é€‰ä¸­,ä½†åªåˆšæ‰“å¼€ç•Œé¢æ˜¯ç”¨å¾—ç€è¿™ä¹ˆåš
 			}
 			
-			//Èç¹ûÎª¿Õ£¬ËµÃ÷ÊÇµÚÒ»´ÎÑ¡Ôñ£¬Ã»ÓĞËùÎ½µÄ¸ÄÑ¡£¬Ö±½ÓµãÁÁÑ¡ÖĞµÄ¾ÍĞĞÁË
+			//å¦‚æœä¸ºç©ºï¼Œè¯´æ˜æ˜¯ç¬¬ä¸€æ¬¡é€‰æ‹©ï¼Œæ²¡æœ‰æ‰€è°“çš„æ”¹é€‰ï¼Œç›´æ¥ç‚¹äº®é€‰ä¸­çš„å°±è¡Œäº†
 			selected =((Integer)v.getTag()).intValue();
 			selectedView = (ImageView)v;
-			((ImageView)v).setImageResource(R.drawable.select_on);//view²ã
-			mList.get(selected).sel_logo = R.drawable.select_on;//mode²ã
+			((ImageView)v).setImageResource(R.drawable.select_on);//viewå±‚
+			mList.get(selected).sel_logo = R.drawable.select_on;//modeå±‚
 			
 			
 			
@@ -131,7 +131,7 @@ public class RestoreAdapter extends BaseAdapter
 		}
 	};
 	
-	private OnClickListener del_listener = new OnClickListener()//ÏàÓ¦É¾³ı°´Å¥
+	private OnClickListener del_listener = new OnClickListener()//ç›¸åº”åˆ é™¤æŒ‰é’®
 	{
 		
 		@Override

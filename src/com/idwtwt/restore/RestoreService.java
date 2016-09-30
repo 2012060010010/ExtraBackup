@@ -1,11 +1,18 @@
 package com.idwtwt.restore;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 
+import com.idwtwt.encrypt.EncryAES;
 import com.idwtwt.net.DownloadMail;
 
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -19,14 +26,23 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.provider.CallLog;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.CommonDataKinds.Phone;
+import android.provider.ContactsContract.CommonDataKinds.StructuredName;
+import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
 
 public class RestoreService extends Service
 {
-	private SharedPreferences preferences; // ÅäÖÃĞÅÏ¢
+	private SharedPreferences preferences; // é…ç½®ä¿¡æ¯
 	private DownloadMail downloadMail;
+	private String contactfile = null;
 	private String fileName = null;
+	private String smsfile = null;
+	private String callfile = null;
+	private String filePath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/ExtraBackup/";
+	
 	private final int MESSAGE_TYPE_LIST = 0;
 	private final int MESSAGE_TYPE_STATUES_FILE_START = 1;
 	private final int MESSAGE_TYPE_STATUES_SMS_START = 2;
@@ -48,7 +64,7 @@ public class RestoreService extends Service
 	@Override
 	public void onCreate()
 	{
-		// TODO Auto-generated method stub
+		
 		super.onCreate();
 
 		preferences = getSharedPreferences("ExtraBackup", MODE_PRIVATE);
@@ -66,14 +82,16 @@ public class RestoreService extends Service
 	private String password;
 
 	@Override
-	public IBinder onBind(Intent intent)
+    public IBinder onBind(Intent intent)
 	{
-		// TODO Auto-generated method stub
+	
 		return binder;
 	}
-	 public void restoreFromLocal(String name)
-	 {
-		 fileName = name;
+   public void restoreFromLocal(String contact,String sms,String call)
+	  {
+		 contactfile = contact;
+		 smsfile=sms;
+		 callfile=call;
 		 new Thread()
 		 {
 
@@ -85,43 +103,40 @@ public class RestoreService extends Service
 				
 				intent.putExtra("type", MESSAGE_TYPE_STATUES_CONTACT_START); 
 				sendBroadcast(intent);
-				if ( restoreContactFromSD(fileName) )
+				boolean reCon=false;
+				boolean reSms=false;
+				boolean reCall=false;
+				if (contactfile.endsWith(".vcf"))
 				{
-					
+					  reCon=restoreContactFromSD(contactfile); 
 				}
-				
-				
 				intent.putExtra("type",MESSAGE_TYPE_STATUES_SMS_START ); 
 				sendBroadcast(intent);
-				if (restoreSMSfromSD(fileName))
+				if (smsfile.endsWith(".csv"))
 				{
-					
+					 reSms=restoreSMSfromSD(smsfile);
 				}
-				else {
-					
+				if (callfile.endsWith(".vcl"))
+				{
+					 reCall=restoreCallsFromSD(callfile);
 				}
-				
 				try
 				{
-					Thread.sleep(1000);
+					Thread.sleep(10);
 				} catch (InterruptedException e)
 				{
-					// TODO Auto-generated catch block
+				
 					e.printStackTrace();
-				}//Ë¯ÃßÒ»ÏÂ£¬·ñÔò¶ÌĞÅ±¸·İÌ«¿ì£¬ÈÃÓÃ»§¾õµÃÃ»ÓĞ»Ö¸´¶ÌĞÅ
-
+				}
+				
 				intent.putExtra("type",MESSAGE_TYPE_STATUES_ALL_DONE ); 
 				sendBroadcast(intent);
-				
-				System.out.println("all done");
+				System.out.println("all restore done");
 			}
 			 
-		 }.start();
-		 
+		 }.start(); 
 	 }
-	
-	
-	
+
  public void restoreFromNet(String name)
  {
 	 fileName = name;
@@ -143,15 +158,13 @@ public class RestoreService extends Service
 			else {
 				
 			}
-			
 			intent.putExtra("type", MESSAGE_TYPE_STATUES_CONTACT_START); 
 			sendBroadcast(intent);
-			if ( restoreContactFromSD(fileName) )
+			boolean reContact=restoreContactFromSD(fileName);
+			if (reContact==true)
 			{
 				
 			}
-			
-
 			intent.putExtra("type",MESSAGE_TYPE_STATUES_SMS_START ); 
 			sendBroadcast(intent);
 			if (restoreSMSfromSD(fileName))
@@ -167,15 +180,13 @@ public class RestoreService extends Service
 				Thread.sleep(1000);
 			} catch (InterruptedException e)
 			{
-				// TODO Auto-generated catch block
+				
 				e.printStackTrace();
-			}//Ë¯ÃßÒ»ÏÂ£¬·ñÔò¶ÌĞÅ±¸·İÌ«¿ì£¬ÈÃÓÃ»§¾õµÃÃ»ÓĞ»Ö¸´¶ÌĞÅ
-			
+			}
 			intent.putExtra("type",MESSAGE_TYPE_STATUES_DEL_START ); 
 			sendBroadcast(intent);
 			if (delete(fileName))
-			{
-				
+			{	
 				
 			}
 			else {
@@ -185,171 +196,246 @@ public class RestoreService extends Service
 			intent.putExtra("type",MESSAGE_TYPE_STATUES_ALL_DONE ); 
 			sendBroadcast(intent);
 			
-			System.out.println("all done");
+			System.out.println("all net restore done");
 		}
 		 
 	 }.start();
 	 
  }
-	
-	
-	//
-	//
-	// ¶ÌĞÅ±¸·İº¯Êı
-	public boolean restoreSMSfromSD(String name)
+ 
+
+	// çŸ­ä¿¡æ¢å¤å‡½æ•°
+	public boolean restoreSMSfromSD(String filename)
 	{
 
-		/*-------------------------------------------------------------------------------------*/
-		SQLiteDatabase db;
-		String dbPath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/ExtraBackup/";
-		File dbf = new File(dbPath + name);
-		if (!dbf.exists())
+		File Smsfile = new File(filePath + filename);
+		if (!Smsfile.exists())
 		{
 			return false;
 		}
-
-		db = SQLiteDatabase.openOrCreateDatabase(dbf, null);
-		// »ñµÃ±¸·İÊı¾İ¿âÖĞµÄËùÓĞ¼ÇÂ¼
-		String sql = "select * from sms order by date desc";
-		Cursor cursor = db.rawQuery(sql, null);
-
-		/*-------------------------------------------------------------------------------------*/
-
-		if (cursor.moveToFirst())
-		{
-			int _id; // ¶ÌĞÅÏûÏ¢ºÅ
-			// int thread_id;// ¶Ô»°µÄĞòºÅ
-			String address; // ·¢¼şÈËµØÖ· ÊÖ»úºÅ
-			int person; // ·¢¼şÈË£¬·µ»ØÒ»¸öÊı×Ö¾ÍÊÇÁªÏµÈËÁĞ±íÀïµÄĞòºÅ
-			long date; // ÈÕÆÚ longĞÍ£¬
-			int read; // ÊÇ·ñÔÄ¶Á
-			String body; // ¶ÌÏûÏ¢ÄÚÈİ
-			String service_center;// ĞÅÏ¢ÖĞĞÄ
-			int error_code;// ´íÎó´úÂë
-			int type; // ÀàĞÍ 1ÊÇ½ÓÊÕµ½µÄ£¬2ÊÇ·¢³öµÄ
-
-			// int _thread_id = cursor.getColumnIndex("thread_id");// ¶Ô»°µÄĞòºÅ
-			int _address = cursor.getColumnIndex("address"); // ·¢¼şÈËµØÖ· ÊÖ»úºÅ
-			int _person = cursor.getColumnIndex("person"); // ·¢¼şÈË£¬·µ»ØÒ»¸öÊı×Ö¾ÍÊÇÁªÏµÈËÁĞ±íÀïµÄĞòºÅ
-			int _date = cursor.getColumnIndex("date"); // ÈÕÆÚ longĞÍ£¬
-			int _read = cursor.getColumnIndex("read"); // ÊÇ·ñÔÄ¶Á
-			int _body = cursor.getColumnIndex("body"); // ¶ÌÏûÏ¢ÄÚÈİ
-			int _service_center = cursor.getColumnIndex("service_center");// ĞÅÏ¢ÖĞĞÄ
-			int _error_code = cursor.getColumnIndex("error_code");// ´íÎó´úÂë
-			int _type = cursor.getColumnIndex("type"); // ÀàĞÍ 1ÊÇ½ÓÊÕµ½µÄ£¬2ÊÇ·¢³öµÄ
-
-			do
-			{
-				// _id = cursor.getString(); // ¶ÌĞÅÏûÏ¢ºÅ
-				// thread_id = cursor.getInt(_thread_id);// ¶Ô»°µÄĞòºÅ
-				address = cursor.getString(_address); // ·¢¼şÈËµØÖ· ÊÖ»úºÅ
-				person = cursor.getInt(_person); // ·¢¼şÈË£¬·µ»ØÒ»¸öÊı×Ö¾ÍÊÇÁªÏµÈËÁĞ±íÀïµÄĞòºÅ
-				date = cursor.getLong(_date); // ÈÕÆÚ longĞÍ£¬
-				read = cursor.getInt(_read); // ÊÇ·ñÔÄ¶Á
-				body = cursor.getString(_body); // ¶ÌÏûÏ¢ÄÚÈİ
-				service_center = cursor.getString(_service_center);// ĞÅÏ¢ÖĞĞÄ
-				error_code = cursor.getInt(_error_code);// ´íÎó´úÂë
-				type = cursor.getInt(_type); // ÀàĞÍ 1ÊÇ½ÓÊÕµ½µÄ£¬2ÊÇ·¢³öµÄ
-
-				// Ğ´Èëµ½¶ÌĞÅÊı¾İÔ´
-				ContentValues SMS_Values = new ContentValues();
-				// SMS_Values.put("thread_id",thread_id);// ¶Ô»°µÄĞòºÅ
-				SMS_Values.put("address", address);// ·¢¼şÈËµØÖ· ÊÖ»úºÅ
-				SMS_Values.put("person", person);// ·¢¼şÈË£¬·µ»ØÒ»¸öÊı×Ö¾ÍÊÇÁªÏµÈËÁĞ±íÀïµÄĞòºÅ
-				SMS_Values.put("date", date);// ÈÕÆÚ longĞÍ£¬
-				SMS_Values.put("read", read);// ÊÇ·ñÔÄ¶Á
-				SMS_Values.put("body", body);// ¶ÌÏûÏ¢ÄÚÈİ
-				SMS_Values.put("service_center", service_center);// ĞÅÏ¢ÖĞĞÄ
-				SMS_Values.put("error_code", error_code);// ´íÎó´úÂë
-				SMS_Values.put("type", type);// ÀàĞÍ 1ÊÇ½ÓÊÕµ½µÄ£¬2ÊÇ·¢³öµÄ
-				SMS_Values.put("status", -1);
-
+		//File smsfile=EncryAES.Decryption(Smsfile,filename,password);//è§£å¯†å·²å¤‡ä»½æ–‡ä»¶
+		String s = null;
+		final String ADDRESS = "address"; // å‘ä»¶äººåœ°å€ æ‰‹æœºå·
+		final String PERSON = "person"; // å‘ä»¶äººï¼Œè¿”å›ä¸€ä¸ªæ•°å­—å°±æ˜¯è”ç³»äººåˆ—è¡¨é‡Œçš„åºå·
+		final String BODY = "body";// çŸ­æ¶ˆæ¯å†…å®¹
+		final String DATE = "date";// æ—¥æœŸ longå‹ï¼Œ
+		final String TYPE = "type";// ç±»å‹ 1æ˜¯æ¥æ”¶åˆ°çš„ï¼Œ2æ˜¯å‘å‡º
+		
+		ContentValues values = new ContentValues();
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(
+					new FileInputStream(Smsfile)));
+			try {
+				while ((s = br.readLine()) != null) {
+					if (s.startsWith("SMS:")) {
+						int index = s.indexOf(":");
+						String content = s.substring(index + 1, s.length());
+						String[] cateArr = content.split(",");
+						switch(cateArr.length){
+						case 3:{
+					        values.put(ADDRESS, cateArr[0]);
+					        values.put(PERSON, cateArr[1]);
+					        values.put(BODY, cateArr[2]);
+					        }
+						case 4:{
+					        values.put(ADDRESS, cateArr[0]);
+					        values.put(PERSON, cateArr[1]);
+					        values.put(BODY, cateArr[2]);
+					        values.put(DATE, cateArr[3]);}
+						case 5:{
+				            values.put(ADDRESS, cateArr[0]);
+				            values.put(PERSON, cateArr[1]);
+				            values.put(BODY, cateArr[2]);
+				            values.put(DATE, cateArr[3]);
+				            values.put(TYPE, cateArr[4]);}
+						}
+		
+							}
+						}
+					
+					getContentResolver().insert(Uri.parse("content://sms"),
+							values);
+					values.clear();
 				
-				getContentResolver().insert(Uri.parse("content://sms"), SMS_Values);
-
-			} while (cursor.moveToNext());
-
-			cursor.close();
-			cursor = null;
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
 		}
 		return true;
 
 	}
-
-	/*
-	 * ContactsContract defines an extensible database of contact-related
-	 * information. Contact information is stored in a three-tier data model: A
-	 * row in the ContactsContract.Data table can store any kind of personal
-	 * data, such as a phone number or email addresses. The set of data kinds
-	 * that can be stored in this table is open-ended. There is a predefined set
-	 * of common kinds, but any application can add its own data kinds. A row in
-	 * the ContactsContract.RawContacts table represents a set of data
-	 * describing a person and associated with a single account (for example,
-	 * one of the user's Gmail accounts). A row in the ContactsContract.Contacts
-	 * table represents an aggregate of one or more RawContacts presumably
-	 * describing the same person. When data in or associated with the
-	 * RawContacts table is changed, the affected aggregate contacts are updated
-	 * as necessary.
-	 */
-
-	//
-	//
-	//
-	//
-	// À´ĞéÄâÈË»Ö¸´º¯Êı
-	public boolean restoreContactFromSD(String file)
+//
+	
+	// è”ç³»äººæ¢å¤å‡½æ•°
+	public boolean restoreContactFromSD(String filename) 
 	{
-		/*---------------------------------------´ò¿ªÊı¾İ¿â±¸·İ----------------------------------------------*/
-		SQLiteDatabase db;
-		String dbPath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/ExtraBackup/";
-		File dbf = new File(dbPath + file);
-		if (!dbf.exists())
+		  File Contactfile = new File(filePath + filename);
+		   if (!Contactfile.exists())
+		    {
+			  return false;
+		     }
+		   //File contactfile=EncryAES.Decryption(Contactfile,filename,password);//è§£å¯†å·²å¤‡ä»½æ–‡ä»¶
+			String s = null;
+			String l = "END:VCARD";
+			BufferedReader br = null;
+		
+				try {
+					br = new BufferedReader(new InputStreamReader(
+							new FileInputStream(Contactfile)));
+				} catch (FileNotFoundException e1) {
+					
+					e1.printStackTrace();
+				}
+			try {
+				while ((s = br.readLine()) != null) {
+					ContentValues values = new ContentValues();
+					Uri rawContactUri = getContentResolver().insert(
+							RawContacts.CONTENT_URI, values);
+					long rawContactsId = ContentUris.parseId(rawContactUri);
+					while ((s = br.readLine()).equals(l) == false) {
+						if (s.startsWith("FN:")) {
+							String FN = s.substring(3);
+							values.clear();
+							values.put(StructuredName.RAW_CONTACT_ID, rawContactsId);
+							values.put(Data.MIMETYPE,
+									StructuredName.CONTENT_ITEM_TYPE);
+							values.put(StructuredName.DISPLAY_NAME, FN);
+							getContentResolver().insert(Data.CONTENT_URI, values);
+						} else if (s.startsWith("TEL;TYPE=HOME:")) {
+							String TelHome = s.substring(14);
+							values.clear();
+							values.put(Phone.RAW_CONTACT_ID, rawContactsId);
+							values.put(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE);
+							values.put(
+									ContactsContract.CommonDataKinds.Phone.TYPE,
+									ContactsContract.CommonDataKinds.Phone.TYPE_HOME);
+							values.put(Phone.NUMBER, TelHome);
+							getContentResolver().insert(Data.CONTENT_URI, values);
+						} else if (s.startsWith("TEL;TYPE=CELL:")) {
+							String TelCell = s.substring(14);
+							values.clear();
+							values.put(Phone.RAW_CONTACT_ID, rawContactsId);
+							values.put(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE);
+							values.put(
+									ContactsContract.CommonDataKinds.Phone.TYPE,
+									ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE);
+							values.put(Phone.NUMBER, TelCell);
+							getContentResolver().insert(Data.CONTENT_URI, values);
+						} else if (s.startsWith("TEL;TYPE=WORK:")) {
+							String TelWork = s.substring(14);
+							values.clear();
+							values.put(Phone.RAW_CONTACT_ID, rawContactsId);
+							values.put(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE);
+							values.put(
+									ContactsContract.CommonDataKinds.Phone.TYPE,
+									ContactsContract.CommonDataKinds.Phone.TYPE_WORK);
+							values.put(Phone.NUMBER, TelWork);
+							getContentResolver().insert(Data.CONTENT_URI, values);
+						} else if (s.startsWith("EMAIL;TYPE=HOME:")) {
+							String EmailHome = s.substring(15);
+							values.clear();
+							values.put(ContactsContract.Data.RAW_CONTACT_ID,
+									rawContactsId);
+							values.put(
+									ContactsContract.Data.MIMETYPE,
+									ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE);
+							values.put(
+									ContactsContract.CommonDataKinds.Email.TYPE,
+									ContactsContract.CommonDataKinds.Email.TYPE_HOME);
+							values.put(ContactsContract.CommonDataKinds.Email.DATA,
+									EmailHome);
+							getContentResolver().insert(
+									ContactsContract.Data.CONTENT_URI, values);
+						} else if (s.startsWith("EMAIL;TYPE=PREF:")) {
+							String EmailWork = s.substring(15);
+							values.clear();
+							values.put(ContactsContract.Data.RAW_CONTACT_ID,
+									rawContactsId);
+							values.put(
+									ContactsContract.Data.MIMETYPE,
+									ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE);
+							values.put(
+									ContactsContract.CommonDataKinds.Email.TYPE,
+									ContactsContract.CommonDataKinds.Email.TYPE_WORK);
+							values.put(ContactsContract.CommonDataKinds.Email.DATA,
+									EmailWork);
+							getContentResolver().insert(
+									ContactsContract.Data.CONTENT_URI, values);
+						} else if (s.startsWith("EMAIL;TYPE=OTHER")) {
+							String EmailOther = s.substring(16);
+							values.clear();
+							values.put(ContactsContract.Data.RAW_CONTACT_ID,
+									rawContactsId);
+							values.put(
+									ContactsContract.Data.MIMETYPE,
+									ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE);
+							values.put(
+									ContactsContract.CommonDataKinds.Email.TYPE,
+									ContactsContract.CommonDataKinds.Email.TYPE_OTHER);
+							values.put(ContactsContract.CommonDataKinds.Email.DATA,
+									EmailOther);
+							getContentResolver().insert(
+									ContactsContract.Data.CONTENT_URI, values);
+						}
+					}
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			try {
+				br.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		return true;
+	}
+	@SuppressLint("SdCardPath")
+	public boolean restoreCallsFromSD(String filename)
+	{
+		File Callfile = new File(filePath +  filename);
+		if (!Callfile.exists())
 		{
 			return false;
 		}
-
-		db = SQLiteDatabase.openOrCreateDatabase(dbf, null);
-
-		String sql = "select * from contacts";
-		Cursor cursor = db.rawQuery(sql, null);
-		cursor.moveToFirst();
-
-		int id = -1;
-		ContentValues values = null;
-		String dataColumn[] =
-		{ "data1", "data2", "data3", "data4", "data5", "data6", "data7", "data8", "data9", "data10", "data11", "data12", "data13", "data14", "data15" };
-		long rawContactId = -1;
-
-		do
-		{
-
-			if (id != cursor.getInt(cursor.getColumnIndex("raw_contacts_id")))// ±íÃ÷ÊÇĞÂµÄÁªÏµÈË
-			{
-				id = cursor.getInt(cursor.getColumnIndex("raw_contacts_id"));
-				// ÏîrawContacts±íÖĞ²åÈëÊı¾İ
-				values = new ContentValues();
-				Uri rawContactUri = getContentResolver().insert(RawContacts.CONTENT_URI, values);
-				rawContactId = ContentUris.parseId(rawContactUri);
-
+		//File callfile=EncryAES.Decryption(Callfile,filename,password);//è§£å¯†å·²å¤‡ä»½æ–‡ä»¶
+		String s = null;
+		ContentValues values = new ContentValues();
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(
+					new FileInputStream(Callfile)));
+			try {
+				while ((s = br.readLine()) != null && s.startsWith("CALL:")) {
+					String[] cateArr = s.substring(5, s.length()).split(",");
+					values.put(CallLog.Calls.NUMBER, cateArr[0]);
+					values.put(CallLog.Calls.DATE, cateArr[1]);
+					values.put(CallLog.Calls.TYPE, cateArr[2]);
+					values.put(CallLog.Calls.DURATION, cateArr[3]);
+					getContentResolver().insert(CallLog.Calls.CONTENT_URI,
+							values);
+					values.clear();
+				}
+			} catch (IOException e) {
+			
+				e.printStackTrace();
 			}
-			// Ïëdata±íÖĞ²åÈëÊı¾İÀàĞÍ
-			values.clear();
-			values.put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
-			values.put(ContactsContract.Data.MIMETYPE, cursor.getString(cursor.getColumnIndex("mimetype")));
-
-			for (int i = 0; i < dataColumn.length; i++)
-			{
-				values.put(dataColumn[i], cursor.getString(cursor.getColumnIndex(dataColumn[i])));
-
-			}
-
-			getContentResolver().insert(ContactsContract.Data.CONTENT_URI, values);
-
-		} while (cursor.moveToNext());
-
+		} catch (FileNotFoundException e) {
+		
+			e.printStackTrace();
+		}
+	
 		return true;
+}
+public boolean isDirExist(String filePath){
+		 File dir=new File(filePath);
+		 if (!dir.exists())
+			{
+				dir.mkdir();
+				return false;
+			}
+		 return true;
 	}
-
 	public void getNetList()
 	{
 		new Thread()
@@ -362,7 +448,7 @@ public class RestoreService extends Service
 				try
 				{
 //					System.out.println("get");
-					ArrayList<String> list = downloadMail.getList();// µÃµ½ÓÊ¼şÁĞ±í
+					ArrayList<String> list = downloadMail.getList();// å¾—åˆ°é‚®ä»¶åˆ—è¡¨
 					
 					Intent intent = new Intent();
 					intent.setAction("com.idwtwt.restore.DATA_REFRESH");
@@ -375,7 +461,7 @@ public class RestoreService extends Service
 
 				} catch (Exception e)
 				{
-					// TODO Auto-generated catch block
+					
 					e.printStackTrace();
 				}
 			}
@@ -387,7 +473,7 @@ public class RestoreService extends Service
 	{
 		if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED))
 		{
-			System.out.println("»ñµÃSD¿¨ ±¸·İÎÄ¼şÁĞ±í");
+			System.out.println("è·å¾—SDå¡ å¤‡ä»½æ–‡ä»¶åˆ—è¡¨");
 			String filePath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/ExtraBackup/";
 			ArrayList<String> list = new ArrayList<String>();
 			File file = new File(filePath);
@@ -415,7 +501,7 @@ public class RestoreService extends Service
 			
 		} catch (Exception e)
 		{
-			// TODO Auto-generated catch block
+		
 			e.printStackTrace();
 			return false;
 		}
@@ -460,7 +546,7 @@ public class RestoreService extends Service
 		String filePath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/ExtraBackup/";
 		File file = new File(filePath + name);
 		file.delete();
-		file = new File(filePath + name + "-journal" );//Ò»ÆğÉ¾³ıÈÕÖ¾ÎÄ¼ş
+		file = new File(filePath + name + "-journal" );//ä¸€èµ·åˆ é™¤æ—¥å¿—æ–‡ä»¶
 		file.delete();
 		Intent intent = new Intent();
 		intent.setAction("com.idwtwt.restore.DATA_REFRESH");
@@ -470,14 +556,15 @@ public class RestoreService extends Service
 
 	}
 	
-	public class DataBaseFilter implements FilenameFilter
+public class DataBaseFilter implements FilenameFilter
 	{
 
 		@Override
 		public boolean accept(File dir, String filename)
 		{
-			
-			return filename.endsWith(".db");
+			if(filename.endsWith(".vcl")||filename.endsWith(".vcf")||filename.endsWith(".csv"))
+			{return true ;}
+			else{return false;}
 		}
 		
 	}

@@ -16,11 +16,8 @@ import android.widget.Toast;
 
 public class UserDialog extends Activity
 {
-	private SharedPreferences preferences; //配置信息
+	private SharedPreferences preferences;//鍒嗕韩璁剧疆鍐呭
 	private SharedPreferences.Editor editor; 
-	private Intent mainIntent;
-	
-	
 	private String host;
 	private String user;
 	private String password;
@@ -83,13 +80,8 @@ public class UserDialog extends Activity
 
 			default:
 				break;
-			}
-			
-		}
-
-		
-
-		
+			}	
+		}		
 	};
 	
 	private void save_setting()
@@ -98,24 +90,24 @@ public class UserDialog extends Activity
 		password = password_edit.getText().toString().trim();
 		host = host_edit.getText().toString().trim();
 		
-		if (user.equals("") || password.equals("") || host.equals(""))//为空，说明没设置好，强制要求重新设置
+		if (user.equals("") || password.equals("") || host.equals(""))
 		{
-			Toast.makeText(UserDialog.this, "信息未填写完整", Toast.LENGTH_SHORT).show();
+			Toast.makeText(UserDialog.this, "锟斤拷息未锟斤拷写锟斤拷锟斤拷", Toast.LENGTH_SHORT).show();
 			return;
 		}
 		
-		editor.putString("user", user);//设置好后，重新写入数据
+		editor.putString("user", user);
 		editor.putString("password", password);
 		editor.putString("host", host);
 		editor.commit();
 		
 		
-		finish();//关闭设置界面
+		finish();
 		
 	}
 	
 	private void cancel()
 	{
-		finish();//关闭设置界面	
+		finish();
 	}
 }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="transparent">#00000000</color>
+    <color name="cyan">#ff00ffff</color>
+    <color name="holo_blue_light">#ff000fff</color>
+    <color name="gray">#101</color>
+
+</resources>

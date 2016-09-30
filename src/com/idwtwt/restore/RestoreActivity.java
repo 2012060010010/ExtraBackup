@@ -47,19 +47,19 @@ public class RestoreActivity extends Activity
 		@Override
 		public void onServiceDisconnected(ComponentName name)
 		{
-			// TODO Auto-generated method stub
-			Toast.makeText(RestoreActivity.this, "±¸·İ·şÎñÒì³£ÍË³ö", Toast.LENGTH_LONG).show();
+			
+			Toast.makeText(RestoreActivity.this, "å¤‡ä»½æœåŠ¡å¼‚å¸¸é€€å‡º", Toast.LENGTH_LONG).show();
 
 		}
 
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service)
 		{
-			// TODO Auto-generated method stub
+			
 			binder = (RestoreService.RestorepBinder) service;
 			isRunning = true;
 			System.out.println("service ok");
-			if (where.equals("ÔÆ¶Ë"))
+			if (where.equals("Cloud"))
 			{
 				binder.getService().getNetList();
 			}else {
@@ -101,7 +101,7 @@ public class RestoreActivity extends Activity
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
-		// TODO Auto-generated method stub
+	
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.restore);
 		
@@ -110,7 +110,7 @@ public class RestoreActivity extends Activity
 	}
 	private void init()
 	{
-		// TODO Auto-generated method stub
+	
 		listView = (ListView) findViewById(R.id.listview_restore);
 		start_restore_btn = (Button) findViewById(R.id.start_restore);
 		refresh_btn = (ImageButton)findViewById(R.id.refresh_btn);
@@ -120,43 +120,46 @@ public class RestoreActivity extends Activity
 		start_restore_btn.setOnClickListener(listener);
 		Intent title_intent = getIntent();
 		where = title_intent.getStringExtra("where");
-		title_tv.setText("´Ó" + where + "»Ö¸´");
+		title_tv.setText("ä»" + where + "æ¢å¤");
 		
 		start_restore_btn.setEnabled(false);
 		/******************************************************************************************/
 		
 		
 		
-		/************************************listViewÏà¹Ø*******************************************************/
+		/************************************listViewç›¸å…³*******************************************************/
 		items = new ArrayList<ListItem>();
+//		for (int i = 0; i < 3; i++)
+//		{
+//			ListItem item = new ListItem();
+//			if(item.getSel_logo()==1){
+//			items.add(item);}
+//		}
 		mAdapter = new RestoreAdapter(RestoreActivity.this, items);
 		listView.setAdapter(mAdapter);
-		 
-		//listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);//Èç¹û²»Ê¹ÓÃÕâ¸öÉèÖÃ£¬Ñ¡ÏîÖĞµÄradiobuttonÎŞ·¨ÏìÓ¦Ñ¡ÖĞÊÂ¼ş
-
-		IntentFilter filter = new IntentFilter();
+	    IntentFilter filter = new IntentFilter();
 		filter.addAction("com.idwtwt.restore.DATA_REFRESH");
 		
 		receiver = new RestoreReceiver();
 		
 		registerReceiver(receiver, filter);
-		/*********************************serviceÏà¹Ø**********************************************************/
+		/*********************************serviceç›¸å…³**********************************************************/
 
-		Intent intent = new Intent();// Êı¾İ¸üĞÂ·şÎñ
+		Intent intent = new Intent();// æ•°æ®æ›´æ–°æœåŠ¡
 		intent.setClass(RestoreActivity.this, RestoreService.class);
 		bindService(intent, connection, Service.BIND_AUTO_CREATE);
 		
 		
-		/*********************************ÏûÏ¢Ïà¹Ø**********************************************************/
+		/*********************************æ¶ˆæ¯ç›¸å…³**********************************************************/
 	
 		
-		/**********************************±¸·İÎÄ¼şÁĞ±í*********************************************************/
-		dialog = ProgressDialog.show(RestoreActivity.this, "»Ö¸´Êı¾İ", "ÕıÔÚ»ñÈ¡±¸·İÎÄ¼şÁĞ±í...");
+		/**********************************å¤‡ä»½æ–‡ä»¶åˆ—è¡¨*********************************************************/
+		dialog = ProgressDialog.show(RestoreActivity.this, "æ¢å¤æ•°æ®", "æ­£åœ¨è·å–å¤‡ä»½æ–‡ä»¶åˆ—è¡¨...");
 	}
 	public void call_delete(int position)
 	{
 		del_position = position;
-		if (where.equals("ÔÆ¶Ë"))
+		if (where.equals("Cloud"))
 		{
 		binder.getService().deleteNetContent(items.get(position).name);
 		}else {
@@ -174,25 +177,38 @@ public class RestoreActivity extends Activity
 			
 			if (isRunning)
 			{
-				if (where.equals("ÔÆ¶Ë"))
+				if (where.equals("Cloud"))
 				{
 					//System.out.println(items.get(mAdapter.getSelected()).name);
-					String name = items.get(mAdapter.getSelected()).name;//µÃµ½Ñ¡ÖĞµÄ±¸·İÎÄ¼şÃû
+					String name = items.get(mAdapter.getSelected()).name;//å¾—åˆ°é€‰ä¸­çš„å¤‡ä»½æ–‡ä»¶å
 					binder.getService().restoreFromNet(name);
 					start_restore_btn.setEnabled(false);
 					
-				}else if (where.equals("SD¿¨"))
-				{
-					String name = items.get(mAdapter.getSelected()).name;//µÃµ½Ñ¡ÖĞµÄ±¸·İÎÄ¼şÃû
-					binder.getService().restoreFromLocal(name);
+				}else if (where.equals("SDCard"))
+				{   String name = items.get(mAdapter.getSelected()).name;//å¾—åˆ°é€‰ä¸­çš„å¤‡ä»½æ–‡ä»¶å
+//				    String contact;String sms;String calls;
+//				   if (items.get(0).getName().endsWith(".vcf"))// é€‰ä¸­å¤‡ä»½è”ç³»äºº
+//				   {
+//					 contact=items.get(0).getName();
+//				   }
+//				   if (items.get(1).getName().endsWith(".csv"))// é€‰ä¸­å¤‡ä»½çŸ­ä¿¡
+//				   {
+//					 sms=items.get(1).getName();
+//				   }
+//				   if (items.get(2).getName().endsWith(".vcl"))// é€‰ä¸­å¤‡ä»½é€šè¯è®°å½•
+//				   {
+//					 calls=items.get(2).getName();
+//				   }
+			
+					binder.getService().restoreFromLocal(name,name,name);
 					start_restore_btn.setEnabled(false);
-					dialog = ProgressDialog.show(RestoreActivity.this, "»Ö¸´Êı¾İ", "×¼±¸±¸·İÊı¾İ...");
+					dialog = ProgressDialog.show(RestoreActivity.this, "æ¢å¤æ•°æ®", "å‡†å¤‡å¤‡ä»½æ•°æ®...");
 				}
 				
 				
 			}
 			else {
-				Toast.makeText(RestoreActivity.this, "·şÎñÆô¶¯Ê§°Ü", Toast.LENGTH_SHORT).show();
+				Toast.makeText(RestoreActivity.this, "æœåŠ¡å¯åŠ¨å¤±è´¥", Toast.LENGTH_SHORT).show();
 			}
 			
 			
@@ -200,7 +216,7 @@ public class RestoreActivity extends Activity
 		}
 	};
 	
-	private OnClickListener refresh_listener = new OnClickListener()//ÁĞ±í¸üĞÂ°´Å¥ÏìÓ¦
+	private OnClickListener refresh_listener = new OnClickListener()//åˆ—è¡¨æ›´æ–°æŒ‰é’®å“åº”
 	{
 		
 		@Override
@@ -208,8 +224,8 @@ public class RestoreActivity extends Activity
 		{
 			items.clear();
 			mAdapter.notifyDataSetChanged();
-			dialog = ProgressDialog.show(RestoreActivity.this, "»Ö¸´Êı¾İ", "ÕıÔÚ»ñÈ¡±¸·İÎÄ¼şÁĞ±í...");
-			if (where.equals("ÔÆ¶Ë"))
+			dialog = ProgressDialog.show(RestoreActivity.this, "æ¢å¤æ•°æ®", "æ­£åœ¨è·å–å¤‡ä»½æ–‡ä»¶åˆ—è¡¨...");
+			if (where.equals("Cloud"))
 			{
 				binder.getService().getNetList();
 			}else {
@@ -230,11 +246,11 @@ public class RestoreActivity extends Activity
 			case  MESSAGE_TYPE_LIST :	
 				ArrayList<String> data = intent.getStringArrayListExtra("data");
 				System.out.println("data get ok");
-				items.clear();//Çå¿ÕÁĞ±íÊı¾İ
+				items.clear();//æ¸…ç©ºåˆ—è¡¨æ•°æ®
 				for (int i = 0; i < data.size(); i++)
 				{
 					ListItem item = new ListItem();
-					item.setName(data.get(i));//ÉèÖÃ±¸·İÎÄ¼şÃû
+					item.setName(data.get(i));//è®¾ç½®å¤‡ä»½æ–‡ä»¶å
 					item.setSel_logo(R.drawable.select_off);
 					items.add(item);
 				} 
@@ -242,35 +258,35 @@ public class RestoreActivity extends Activity
 				dialog.dismiss();
 				break;
 			case MESSAGE_TYPE_STATUES_FILE_START:
-				dialog = ProgressDialog.show(RestoreActivity.this, "»Ö¸´Êı¾İ", "»ñÈ¡·şÎñÆ÷¶Ë±¸·İÊı¾İ...");
+				dialog = ProgressDialog.show(RestoreActivity.this, "æ¢å¤æ•°æ®", "è·å–æœåŠ¡å™¨ç«¯å¤‡ä»½æ•°æ®...");
 				
 			
 				break;
 			case MESSAGE_TYPE_STATUES_CONTACT_START:
 				dialog.dismiss();
-				dialog = ProgressDialog.show(RestoreActivity.this, "»Ö¸´Êı¾İ", "»Ö¸´ÁªÏµÈËÊı¾İ...");
+				dialog = ProgressDialog.show(RestoreActivity.this, "æ¢å¤æ•°æ®", "æ¢å¤è”ç³»äººæ•°æ®...");
 				
 				break;
 			case MESSAGE_TYPE_STATUES_SMS_START:
 				dialog.dismiss();
-				dialog = ProgressDialog.show(RestoreActivity.this, "»Ö¸´Êı¾İ", "»Ö¸´¶ÌĞÅÊı¾İ...");
+				dialog = ProgressDialog.show(RestoreActivity.this, "æ¢å¤æ•°æ®", "æ¢å¤çŸ­ä¿¡æ•°æ®...");
 				
 				break;
 			case MESSAGE_TYPE_STATUES_DEL_START:
 				dialog.dismiss();
-				dialog = ProgressDialog.show(RestoreActivity.this, "»Ö¸´Êı¾İ", "É¾³ıÁÙÊ±ÎÄ¼ş...");
+				dialog = ProgressDialog.show(RestoreActivity.this, "æ¢å¤æ•°æ®", "åˆ é™¤ä¸´æ—¶æ–‡ä»¶...");
 
 				break;
 			case MESSAGE_TYPE_STATUES_ALL_DONE:
 				
 				dialog.dismiss();
-				Toast.makeText(RestoreActivity.this,"Êı¾İ»Ö¸´Íê³É", Toast.LENGTH_SHORT).show();
+				Toast.makeText(RestoreActivity.this,"æ•°æ®æ¢å¤å®Œæˆ", Toast.LENGTH_SHORT).show();
 				start_restore_btn.setEnabled(true);
 				break;
 			case MESSAGE_TYPE_STATUES_DEL_DONE:
 				items.remove(del_position);
 				mAdapter.notifyDataSetInvalidated();
-				Toast.makeText(RestoreActivity.this,"É¾³ı³É¹¦", Toast.LENGTH_SHORT).show();
+				Toast.makeText(RestoreActivity.this,"åˆ é™¤æˆåŠŸ", Toast.LENGTH_SHORT).show();
 				break;
 			
 			default:

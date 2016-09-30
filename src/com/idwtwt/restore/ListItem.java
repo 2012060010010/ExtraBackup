@@ -1,11 +1,15 @@
 package com.idwtwt.restore;
-
-import android.R.integer;
-
 public class ListItem
 {
 	public String name;
 	public int sel_logo;
+//	public ListItem(String  name, int logo)
+//	{
+//		
+//		this.name = name;
+//		this.sel_logo = logo;
+//		
+//	}
 	public int getSel_logo()
 	{
 		return sel_logo;
